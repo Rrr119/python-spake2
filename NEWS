@@ -3,7 +3,14 @@ User-Visible Changes in python-spake2
 
 * Upcoming Release
 
-(Put notes about merged features here).
+Add an opt-in role-bound login format (`roleA=`/`roleB=`, or non-empty
+identity strings) with a version/sequence/role wire header, transcript
+binding for both roles, strict message ordering, and validated peer roles.
+
+Add key-confirmation helpers and `FailureCounter`/`LoginAttemptTracker` for
+per-principal failure counting and lockout. The original wire format remains
+the default for identifier-free sessions so existing peers can still
+interoperate.
 
 
 * Release 0.9 (24-Sep-2024)

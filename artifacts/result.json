@@ -1,0 +1,18 @@
+{
+  "uid": "28691",
+  "harness": "Codex CLI",
+  "snapshotUrl": "https://github.com/Rrr119/python-spake2/commit/7d5a36ccb683b93fff7f36cb1deda7ebe867dacf",
+  "harnessVersion": "codex-cli 0.167.2",
+  "operatingSystem": "Ubuntu 26.04.1 LTS",
+  "operatingSystemCell": [
+    "MacOS/Linux"
+  ],
+  "outputDirectory": "/home/dev/feedback/uid28691",
+  "wslDistro": "Ubuntu-26.04",
+  "B": {
+    "success": false,
+    "canceled": true,
+    "error": "任务已取消",
+    "side": "B"
+  }
+}

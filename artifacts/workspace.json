@@ -1,0 +1,17 @@
+{
+  "root": "/home/dev/feedback/uid28691",
+  "B": "/home/dev/feedback/uid28691",
+  "sha": "7d5a36ccb683b93fff7f36cb1deda7ebe867dacf",
+  "wslDistro": "Ubuntu-26.04",
+  "source": {
+    "owner": "warner",
+    "repo": "python-spake2",
+    "sha": "7d5a36ccb683b93fff7f36cb1deda7ebe867dacf"
+  },
+  "fork": {
+    "owner": "Rrr119",
+    "repo": "python-spake2",
+    "cloneUrl": "https://github.com/Rrr119/python-spake2.git"
+  },
+  "at": "2026-11-20T00:19:06.885Z"
+}

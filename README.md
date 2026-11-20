@@ -27,7 +27,9 @@ necessary, that will require a second round trip.
 
 All messages are bytestrings. For the default security level (using the
 Ed25519 elliptic curve, roughly equivalent to an 128-bit symmetric key), the
-message is 33 bytes long.
+message is 33 bytes long. Login-style sessions that use identifiers or
+explicit role identifiers use the role-bound message format described below,
+which adds a version/sequence/role header and is 51 bytes long for Ed25519.
 
 ## What Is It Good For?
 
@@ -207,6 +209,61 @@ string.
 `SPAKE2_Symmetric` uses a single `idSymmetric=` string, instead of `idA` and
 `idB`. Both sides must provide the same `idSymmetric=`, or leave it empty.
 
+## Role Binding, Message Ordering, and Login Lockout
+
+Plain `SPAKE2_A`/`SPAKE2_B` messages carry an unauthenticated side byte. For
+login protocols, pass identifiers or explicit role names so that the side,
+both roles, and the message sequence are bound into the wire header and the
+key transcript:
+
+```python
+from spake2 import SPAKE2_A, SPAKE2_B, FailureCounter
+
+s = SPAKE2_A(password, idA=b"alice", idB=b"example.com",
+             roleA=b"client", roleB=b"server")
+msg_out = s.start()
+key = s.finish(msg_in)
+confirmation = s.make_confirmation()
+```
+
+The peer constructs `SPAKE2_B` with the same `idA`, `idB`, `roleA`, and
+`roleB`. The role-bound message format validates:
+
+* the expected peer side (`A` vs `B`),
+* the wire protocol version and message sequence number (`1` for the PAKE
+  message),
+* a role tag derived from the peer's role identifier,
+* the exact payload length, before parsing the group element.
+
+Using non-empty identifiers, `roleA=`/`roleB=`, or
+`protocol_version=PROTOCOL_VERSION_ROLE_BOUND` activates this hardened
+format. A bare `SPAKE2_A(password)` with no identifiers keeps the original
+wire format for compatibility; pass `protocol_version=1` explicitly if an
+identifier-bearing session must interoperate with an older peer.
+
+SPAKE2 does not know whether the two sides derived the same key. Send and
+verify the key-confirmation tags before using the key for login:
+
+```python
+assert s.verify_confirmation(peer_confirmation, limiter=counter,
+                             limiter_key=b"alice")
+```
+
+`FailureCounter` (also exported as `LoginAttemptTracker`/`AttemptLimiter`)
+tracks consecutive failures per principal and locks after a configurable
+threshold:
+
+```python
+counter = FailureCounter(max_failures=5, lockout_seconds=300)
+counter.check(b"alice")       # raises LockedOut while locked
+counter.record_failure(b"alice")
+counter.record_success(b"alice")
+```
+
+`verify_confirmation(..., limiter=counter, limiter_key=...)` performs the
+check/record steps around the constant-time tag comparison. A failed
+confirmation raises `KeyConfirmationError`; a lockout raises `LockedOut`.
+
 ## Serialization
 
 Sometimes, you can't hold the SPAKE2 instance in memory for the whole
@@ -233,7 +290,8 @@ The instance data is highly sensitive and includes the password: protect it
 carefully. An eavesdropper who learns the instance state from just one side
 will be able to reconstruct the shared key. `data` is a printable ASCII
 bytestring (the JSON-encoding of a small dictionary). For `ParamsEd25519`,
-the serialized data requires 221 bytes.
+the legacy-format serialized data requires about 233 bytes; a role-bound login
+session also stores its role identifiers and requires about 290 bytes.
 
 Note that you must restore the instance with the same side (`SPAKE2_A` vs
 `SPAKE2_B`) and `params=` (if overridden) as you used when first creating it.
